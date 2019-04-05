@@ -1,0 +1,44 @@
+{
+    "name": "shugachara/search-sdk",
+    "description": "搜索引擎SDK",
+    "keywords": [
+        "sdk",
+        "search",
+        "shugachara",
+        "search-sdk",
+        "elasticsearch",
+        "es"
+    ],
+    "type": "library",
+    "license": "MIT",
+    "homepage": "https://github.com/shugachara/search-sdk",
+    "authors": [
+        {
+            "name": "shugachara",
+            "email": "1099013371@qq.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.0",
+        "shugachara/core-sdk": "^2.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "~6.0"
+    },
+    "autoload": {
+        "files": [
+
+        ],
+        "psr-4": {
+            "ShugaChara\\SearchSDK\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "ShugaChara\\Tests\\": "tests/"
+        }
+    },
+    "repositories": [
+
+    ]
+}

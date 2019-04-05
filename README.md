@@ -1,1 +1,1 @@
-# search-sdk
+# SEARCH-SDK
