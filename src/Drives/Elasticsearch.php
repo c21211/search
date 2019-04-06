@@ -21,21 +21,213 @@ use Elasticsearch\ClientBuilder;
 
 class Elasticsearch
 {
+    /**
+     * @var string 索引文档前缀
+     */
     protected $prefix = 'sgc_';
 
+    /**
+     * @var string 索引文档后缀标识
+     */
     protected $indexSuffix = '_index';
 
+    /**
+     * @var string 索引文档类型后缀标识
+     */
     protected $typeSuffix = '_type';
 
-    protected $hosts = [
-        '127.0.0.1:9200'
+    /**
+     * @var array ES 搜索引擎配置项
+     */
+    protected $config = [
+        'hosts'     =>
+            [
+                '127.0.0.1:9200'
+            ]
     ];
 
-    private $elasticsearch;
+    private $resources;
 
     protected $params;
 
-    protected $result;
+    /**
+     * @var bool 是否开启操作日志 -- 开启使用时主要数据量过大问题，可通过数据拆分或删除旧数据等方式解决
+     */
+    protected $isOpenLog = false;
+    /**
+     * @var 操作日志表Log名称
+     */
+    protected $actionLogKeyName = 'es_action_i_logs';
+
+    public function __construct(array $config = [])
+    {
+        if ($config) {
+            $this->config = array_merge($this->config, $config);
+        }
+    }
+
+    /**
+     * 设置索引文档前缀
+     *
+     * @param $prefix
+     * @return $this
+     */
+    public function setPrefix($prefix)
+    {
+        $this->prefix = $prefix;
+
+        return $this;
+    }
+
+    /**
+     * 获取索引文档前缀
+     *
+     * @return string
+     */
+    public function getPrefix()
+    {
+        return $this->prefix;
+    }
+
+    /**
+     * 设置索引文档后缀标识
+     *
+     * @param $prefix
+     * @return $this
+     */
+    public function setIndexSuffix($suffix)
+    {
+        $this->indexSuffix = $suffix;
+
+        return $this;
+    }
+
+    /**
+     * 获取索引文档后缀标识
+     *
+     * @return string
+     */
+    public function getIndexSuffix()
+    {
+        return $this->indexSuffix;
+    }
+
+    /**
+     * 设置索引文档类型后缀标识
+     *
+     * @param $suffix
+     * @return $this
+     */
+    public function setTypeSuffix($suffix)
+    {
+        $this->typeSuffix = $suffix;
+
+        return $this;
+    }
+
+    /**
+     * 获取索引文档类型后缀标识
+     *
+     * @return string
+     */
+    public function getTypeSuffix()
+    {
+        return $this->typeSuffix;
+    }
+
+    /**
+     * 获取是否开启操作日志状态
+     *
+     * @return bool
+     */
+    public function getIsOpenLog()
+    {
+        return $this->isOpenLog;
+    }
+
+    /**
+     * @return 获取操作日志表Log名称
+     */
+    public function getActionLogKeyName()
+    {
+        return $this->actionLogKeyName;
+    }
+
+    /**
+     * 开启操作日志
+     *
+     * @param string $key_name  操作日志表名,自定义-(不填则使用默认值)
+     * @return $this
+     */
+    public function openActionLog($key_name = '')
+    {
+        $id = 1;
+
+        $this->isOpenLog = true;
+
+        $this->actionLogKeyName = trim($key_name) ? : $this->actionLogKeyName;
+
+        if (! $this->existsIndex($this->actionLogKeyName, $id, true)) {
+            $params = [
+                'index'     =>  $this->prefix . $this->actionLogKeyName . $this->indexSuffix,
+                'type'      =>  $this->prefix . $this->actionLogKeyName . $this->typeSuffix,
+                'id'        =>  $id,
+                'body'      =>  $this->actionLogContent('初始化操作日志'),
+            ];
+
+            $this->build()->index($params);
+        }
+
+        return $this;
+    }
+
+    /**
+     * 操作日志数据源
+     *
+     * @param        $desc      操作描述
+     * @param string $content   日志内容
+     * @param string $rec       导致日志产生的源数据
+     * @return array
+     */
+    private function actionLogContent($desc, $content = '', $rec = '')
+    {
+        return [
+            'created_at'     =>  date('Y-m-d H:i:s'),
+            'desc'           =>  $desc,
+            'content'        =>  $content,
+            'rec'            =>  $rec
+        ];
+    }
+
+    /**
+     * 写入操作日志
+     *
+     * @param        $desc      操作描述
+     * @param string $content   日志内容
+     * @param string $rec       导致日志产生的源数据
+     */
+    private function writeActionLog($desc, $content = '', $rec = '')
+    {
+        if ($this->isOpenLog) {
+            $params = [
+                'index'     =>  $this->prefix . $this->actionLogKeyName . $this->indexSuffix,
+                'type'      =>  $this->prefix . $this->actionLogKeyName . $this->typeSuffix,
+            ];
+
+            $params['body'] = $this->actionLogContent($desc, $content, json_encode([
+                '请求参数'  =>  $rec,
+            ]));
+
+            try {
+                if ($ret = $this->build()->index($params)) {
+                    return true;
+                }
+
+            } catch (\Exception $exception) {}
+
+            return false;
+        }
+    }
 
     /**
      * 配置相关内容 启动ES服务
@@ -44,46 +236,69 @@ class Elasticsearch
      */
     private function build()
     {
-        if (! $this->elasticsearch) {
+        if (! $this->resources) {
             try {
-                $this->elasticsearch = ClientBuilder::create()
-                    ->setHosts($this->hosts)
+                $this->resources = ClientBuilder::create()
+                    ->setHosts(sgc_array_get($this->config, 'hosts'))
                     ->build();
+
             } catch (\Exception $exception) {
 
-                return '连接ElasticSearch服务错误.';
+                return null;
             }
         }
 
-        return $this->elasticsearch;
+        return $this->resources;
     }
 
     /**
+     *
      * 创建初始化索引文档
      *
-     * @param       $key_name   键名，一般填写表名称,用来作为文档名称
-     * @param       $id_name    ID名称，用户表示每个文档主键ID字段
-     * @param array $data       文档数据，多个用多维数组表示，
-     *                          比如: [
+     * @param       $key_name       键名，一般填写表名称,用来作为文档名称
+     * @param array $data           文档数据，多个用多维数组表示，
+     *                              比如: [
      *                                  ['id' => 1, 'name' => 'kaka'],
      *                                  ['id' => 2, 'name' => 'shugachara'],
      *                                ]
-     * @return bool
+     * @param       $id_name        ID名称，用户表示每个文档主键ID字段
+     * @param array $is_default_id  是否使用默认自增ID(加密值)
+     * @return int 返回成功插入的数量
      */
-    public function createIndexDocument($key_name, $id_name, array $data)
+    public function createIndexDocument($key_name, array $data, $id_name = 'id', $is_default_id = false)
     {
+        $success_number = 0;
+
         foreach ($data as $row) {
+
+            if (is_object($row)) {
+                $row = (array) $row;
+            }
+
             $params = [
                 'index'     =>  $this->prefix . $key_name . $this->indexSuffix,
                 'type'      =>  $this->prefix . $key_name . $this->typeSuffix,
-                'id'        =>  $key_name . '_' . $row[$id_name],
                 'body'      =>  $row,
             ];
 
-            $this->build()->create($params);
+            if (! $is_default_id) {
+                $params['id'] = $row[$id_name];
+            }
+
+            try {
+                if ($ret = $this->build()->create($params)) {
+                    $this->writeActionLog('createIndexDocument SUCCESS 创建初始化索引文档 ' . $key_name . ' 成功', $ret, $params);
+
+                    $success_number++;
+                }
+
+            } catch (\Exception $exception) {
+
+                $this->writeActionLog('createIndexDocument ERROR 创建初始化索引文档 ' . $key_name . ' 失败', $exception->getMessage(), $params);
+            }
         }
 
-        return true;
+        return $success_number;
     }
 
     /**
@@ -98,33 +313,66 @@ class Elasticsearch
             'index'     =>  $this->prefix . $key_name . $this->indexSuffix
         ];
 
-        return $this->build()->indices()->delete($params);
+        try {
+            if ($ret = $this->build()->indices()->delete($params)) {
+                $this->writeActionLog('deleteIndexDocument SUCCESS 删除索引文档 ' . $key_name . ' 成功', $ret, $params);
+
+                return true;
+            }
+
+        } catch (\Exception $exception) {
+
+            $this->writeActionLog('deleteIndexDocument ERROR 删除索引文档 ' . $key_name . ' 失败', $exception->getMessage(), $params);
+        }
+
+        return false;
     }
 
     /**
      * 新增文档索引数据
      *
-     * @param       $key_name   键名，一般填写表名称,用来作为文档名称
-     * @param array $data       文档数据，比如: ['id' => 1, 'name' => 'kaka']
+     * @param       $key_name           键名，一般填写表名称,用来作为文档名称
+     * @param array $data               文档数据，比如: ['id' => 1, 'name' => 'kaka']
+     * @param array $id_name            ID名称，用户表示每个文档主键ID字段
+     * @param array $is_default_id      是否使用默认自增ID(加密值)
      * @return array|null
      */
-    public function addIndex($key_name, array $data)
+    public function addIndex($key_name, array $data, $id_name = 'id', $is_default_id = false)
     {
-        $params['index'] = $this->prefix . $key_name . $this->indexSuffix;
-
         if ($data) {
+            $params = [
+                'index'     =>  $this->prefix . $key_name . $this->indexSuffix,
+                'type'      =>  $this->prefix . $key_name . $this->typeSuffix,
+            ];
+
+            $data = is_object($data) ? (array) $data : $data;
+            if (! $is_default_id) {
+                $params['id'] = $data[$id_name];
+            }
+
             $params['body'] = $data;
-            return $this->build()->indices()->create($params);
+
+            try {
+                if ($ret = $this->build()->index($params)) {
+                    $this->writeActionLog('addIndex SUCCESS 新增文档索引数据 ' . $key_name . ' 成功', $ret, $params);
+
+                    return true;
+                }
+
+            } catch (\Exception $exception) {
+
+                $this->writeActionLog('addIndex ERROR 新增文档索引数据 ' . $key_name . ' 失败', $exception->getMessage(), $params);
+            }
         }
 
-        return null;
+        return false;
     }
 
     /**
      * 判断文档索引是否存在
      *
-     * @param $key_name     键名，一般填写表名称,用来作为文档名称
-     * @param $id           文档数据索引ID
+     * @param $key_name         键名，一般填写表名称,用来作为文档名称
+     * @param $id               文档数据索引ID
      * @return array|bool
      */
     public function existsIndex($key_name, $id)
@@ -132,7 +380,7 @@ class Elasticsearch
         $params = [
             'index'     =>  $this->prefix . $key_name . $this->indexSuffix,
             'type'      =>  $this->prefix . $key_name . $this->typeSuffix,
-            'id'        =>  $key_name . '_' . $id,
+            'id'        =>  $id,
         ];
 
         return $this->build()->exists($params);
@@ -141,8 +389,8 @@ class Elasticsearch
     /**
      * 获取文档索引数据
      *
-     * @param $key_name     键名，一般填写表名称,用来作为文档名称
-     * @param $id           文档数据索引ID
+     * @param $key_name         键名，一般填写表名称,用来作为文档名称
+     * @param $id               文档数据索引ID
      * @return array
      */
     public function getIndex($key_name, $id)
@@ -150,7 +398,7 @@ class Elasticsearch
         $params = [
             'index'     =>  $this->prefix . $key_name . $this->indexSuffix,
             'type'      =>  $this->prefix . $key_name . $this->typeSuffix,
-            'id'        =>  $key_name . '_' . $id,
+            'id'        =>  $id,
         ];
 
         return $this->build()->get($params);
@@ -169,18 +417,30 @@ class Elasticsearch
         $params = [
             'index'     =>  $this->prefix . $key_name . $this->indexSuffix,
             'type'      =>  $this->prefix . $key_name . $this->typeSuffix,
-            'id'        =>  $key_name . '_' . $id,
+            'id'        =>  $id,
             'body'      =>  $data,
         ];
 
-        return $this->build()->update($params);
+        try {
+            if ($ret = $this->build()->update($params)) {
+                $this->writeActionLog('updateIndex SUCCESS 更新文档索引数据 ' . $key_name . ' 成功', $ret, $params);
+
+                return true;
+            }
+
+        } catch (\Exception $exception) {
+
+            $this->writeActionLog('updateIndex ERROR 更新文档索引数据 ' . $key_name . ' 失败', $exception->getMessage(), $params);
+        }
+
+        return false;
     }
 
     /**
      * 删除文档索引数据
      *
-     * @param $key_name 键名，一般填写表名称,用来作为文档名称
-     * @param $id       文档数据索引ID
+     * @param $key_name         键名，一般填写表名称,用来作为文档名称
+     * @param $id               文档数据索引ID
      * @return array
      */
     public function deleteIndex($key_name, $id)
@@ -188,10 +448,22 @@ class Elasticsearch
         $params = [
             'index'     =>  $this->prefix . $key_name . $this->indexSuffix,
             'type'      =>  $this->prefix . $key_name . $this->typeSuffix,
-            'id'        =>  $key_name . '_' . $id,
+            'id'        =>  $id,
         ];
 
-        return $this->build()->delete($params);
+        try {
+            if ($ret = $this->build()->delete($params)) {
+                $this->writeActionLog('deleteIndex SUCCESS 删除文档索引数据 ' . $key_name . ' 成功', $ret, $params);
+
+                return true;
+            }
+
+        } catch (\Exception $exception) {
+
+            $this->writeActionLog('deleteIndex ERROR 删除文档索引数据 ' . $key_name . ' 失败', $exception->getMessage(), $params);
+        }
+
+        return false;
     }
 
     /**
@@ -226,10 +498,10 @@ class Elasticsearch
         $this->params['body'] = $body;
 
         try {
-            return $this->result = $this->build()->search($this->params);
+            return $this->build()->search($this->params);
 
         } catch (\Exception $exception) {
-            return $this->result = [
+            return [
                 'hits'  => [ 'hits'  => [], 'total' => 0 ]
             ];
         }

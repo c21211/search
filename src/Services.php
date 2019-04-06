@@ -77,11 +77,11 @@ class Services
      *
      * @return 驱动资源|string
      */
-    public function getResources()
+    public function getResources(array $config = [])
     {
         try {
             $rs = isset(self::SEARCH_DRIVES_RESOURCES[$this->drives]) ? self::SEARCH_DRIVES_RESOURCES[$this->drives] : $this;
-            $this->resources = new $rs();
+            $this->resources = new $rs($config);
 
         } catch (\Exception $exception) {
             return $exception->getMessage();
