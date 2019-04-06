@@ -16,6 +16,8 @@
 
 ## 使用方法
 
+使用ES前请先确保已安装ElasticSearch服务, https://www.elastic.co/cn
+
 **安装**
 
 ```
@@ -28,16 +30,17 @@ composer require shugachara/search-sdk
 <?php
 namespace App\Http\Controllers;
 
-use ShugaChara\SearchSDK\Services;
+use ShugaChara\SearchSDK\Elasticsearch;
 
 class IndexController extends Controller
 {
     public function index()
     {
-        $res = Services::getInstance()->setDrives('ELASTICSEARCH')->getResources()->openActionLog();
         $sql = \DB::table('ls_article')->get()->toArray();
 
+        $res = Elasticsearch::getInstance()->initGlobalConfig();
         $m = $res->createIndexDocument('ls_article', $sql, 'article_id');
+        // $m = $res->deleteIndexDocument('ls_article');
 
         dd($m);
     }

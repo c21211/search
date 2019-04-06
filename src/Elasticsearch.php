@@ -15,12 +15,15 @@
 |--------------------------------------------------------------------------
  */
 
-namespace ShugaChara\SearchSDK\Drives;
+namespace ShugaChara\SearchSDK;
 
 use Elasticsearch\ClientBuilder;
+use ShugaChara\CoreSDK\Traits\Singleton;
 
 class Elasticsearch
 {
+    use Singleton;
+
     /**
      * @var string 索引文档前缀
      */
@@ -59,11 +62,53 @@ class Elasticsearch
      */
     protected $actionLogKeyName = 'es_action_i_logs';
 
-    public function __construct(array $config = [])
+    /**
+     * 初始化全局配置 | 启动 ES 服务
+     *
+     * @param array $config              ES 搜索引擎配置项
+     * @param bool $isOpenLog            是否开启操作日志
+     * @param string $actionLogKeyName   操作日志表Log名称  自定义-(不填则使用默认值$this->actionLogKeyName)
+     * @return $this
+     */
+    public function initGlobalConfig(array $config = [], bool $isOpenLog = false, string $actionLogKeyName = '')
     {
         if ($config) {
             $this->config = array_merge($this->config, $config);
         }
+
+        if (! $this->resources) {
+            try {
+                $this->resources = ClientBuilder::create()
+                    ->setHosts(sgc_array_get($this->config, 'hosts'))
+                    ->build();
+
+            } catch (\Exception $exception) {
+
+                return $this;
+            }
+        }
+
+        if ($isOpenLog) {
+
+            $id = 1;
+
+            $this->isOpenLog = true;
+
+            $this->actionLogKeyName = trim($actionLogKeyName) ? : $this->actionLogKeyName;
+
+            if (! $this->existsIndex($this->actionLogKeyName, $id, true)) {
+                $params = [
+                    'index'     =>  $this->prefix . $this->actionLogKeyName . $this->indexSuffix,
+                    'type'      =>  $this->prefix . $this->actionLogKeyName . $this->typeSuffix,
+                    'id'        =>  $id,
+                    'body'      =>  $this->actionLogContent('初始化操作日志'),
+                ];
+
+                $this->getResources()->index($params);
+            }
+        }
+
+        return $this;
     }
 
     /**
@@ -154,31 +199,20 @@ class Elasticsearch
     }
 
     /**
-     * 开启操作日志
+     * 获取ES
      *
-     * @param string $key_name  操作日志表名,自定义-(不填则使用默认值)
-     * @return $this
+     * @return mixed
      */
-    public function openActionLog($key_name = '')
+    private function getResources()
     {
-        $id = 1;
+        return $this->resources ? : $this;
+    }
 
-        $this->isOpenLog = true;
+    public function __call($name, $arguments)
+    {
+        // TODO: Implement __call() method.
 
-        $this->actionLogKeyName = trim($key_name) ? : $this->actionLogKeyName;
-
-        if (! $this->existsIndex($this->actionLogKeyName, $id, true)) {
-            $params = [
-                'index'     =>  $this->prefix . $this->actionLogKeyName . $this->indexSuffix,
-                'type'      =>  $this->prefix . $this->actionLogKeyName . $this->typeSuffix,
-                'id'        =>  $id,
-                'body'      =>  $this->actionLogContent('初始化操作日志'),
-            ];
-
-            $this->build()->index($params);
-        }
-
-        return $this;
+        return null;
     }
 
     /**
@@ -219,7 +253,7 @@ class Elasticsearch
             ]));
 
             try {
-                if ($ret = $this->build()->index($params)) {
+                if ($ret = $this->getResources()->index($params)) {
                     return true;
                 }
 
@@ -227,28 +261,6 @@ class Elasticsearch
 
             return false;
         }
-    }
-
-    /**
-     * 配置相关内容 启动ES服务
-     *
-     * @return \Elasticsearch\Client|string
-     */
-    private function build()
-    {
-        if (! $this->resources) {
-            try {
-                $this->resources = ClientBuilder::create()
-                    ->setHosts(sgc_array_get($this->config, 'hosts'))
-                    ->build();
-
-            } catch (\Exception $exception) {
-
-                return null;
-            }
-        }
-
-        return $this->resources;
     }
 
     /**
@@ -286,7 +298,7 @@ class Elasticsearch
             }
 
             try {
-                if ($ret = $this->build()->create($params)) {
+                if ($ret = $this->getResources()->create($params)) {
                     $this->writeActionLog('createIndexDocument SUCCESS 创建初始化索引文档 ' . $key_name . ' 成功', $ret, $params);
 
                     $success_number++;
@@ -314,7 +326,7 @@ class Elasticsearch
         ];
 
         try {
-            if ($ret = $this->build()->indices()->delete($params)) {
+            if ($ret = $this->getResources()->indices()->delete($params)) {
                 $this->writeActionLog('deleteIndexDocument SUCCESS 删除索引文档 ' . $key_name . ' 成功', $ret, $params);
 
                 return true;
@@ -353,7 +365,7 @@ class Elasticsearch
             $params['body'] = $data;
 
             try {
-                if ($ret = $this->build()->index($params)) {
+                if ($ret = $this->getResources()->index($params)) {
                     $this->writeActionLog('addIndex SUCCESS 新增文档索引数据 ' . $key_name . ' 成功', $ret, $params);
 
                     return true;
@@ -383,7 +395,7 @@ class Elasticsearch
             'id'        =>  $id,
         ];
 
-        return $this->build()->exists($params);
+        return $this->getResources()->exists($params);
     }
 
     /**
@@ -401,7 +413,7 @@ class Elasticsearch
             'id'        =>  $id,
         ];
 
-        return $this->build()->get($params);
+        return $this->getResources()->get($params);
     }
 
     /**
@@ -422,7 +434,7 @@ class Elasticsearch
         ];
 
         try {
-            if ($ret = $this->build()->update($params)) {
+            if ($ret = $this->getResources()->update($params)) {
                 $this->writeActionLog('updateIndex SUCCESS 更新文档索引数据 ' . $key_name . ' 成功', $ret, $params);
 
                 return true;
@@ -452,7 +464,7 @@ class Elasticsearch
         ];
 
         try {
-            if ($ret = $this->build()->delete($params)) {
+            if ($ret = $this->getResources()->delete($params)) {
                 $this->writeActionLog('deleteIndex SUCCESS 删除文档索引数据 ' . $key_name . ' 成功', $ret, $params);
 
                 return true;
@@ -482,7 +494,7 @@ class Elasticsearch
             'index'     =>  $key_names,
         ];
 
-        return $this->build()->indices()->getMapping($params);
+        return $this->getResources()->indices()->getMapping($params);
     }
 
     //---------------------- 查询操作 START -------------------------------//
@@ -498,7 +510,7 @@ class Elasticsearch
         $this->params['body'] = $body;
 
         try {
-            return $this->build()->search($this->params);
+            return $this->getResources()->search($this->params);
 
         } catch (\Exception $exception) {
             return [
