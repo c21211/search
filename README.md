@@ -1,1 +1,53 @@
-# SEARCH-SDK
+# SEARCH-SDK 
+
+[![GitHub release](https://img.shields.io/github/release/shugachara/music-sdk.svg)](https://github.com/shugachara/music-sdk/releases)
+[![PHP version](https://img.shields.io/badge/php-%3E%207-orange.svg)](https://github.com/php/php-src)
+[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](#LICENSE)
+
+## 说明
+
+对于大数据来说,搜索引擎技术是非常重要的。比如日志分析系统、全文搜索等。
+
+暂时已完成ElasticSearch第一版开发，只包含基础功能, 后续会不断扩展，我将会一直维护该项目, 如果有需要改进的地方欢迎 issues。
+
+## 包地址
+
+[Search-SDK](https://packagist.org/packages/shugachara/search-sdk)
+
+## 使用方法
+
+**安装**
+
+```
+composer require shugachara/search-sdk
+```
+
+**调用**
+
+```php
+<?php
+namespace App\Http\Controllers;
+
+use ShugaChara\SearchSDK\Services;
+
+class IndexController extends Controller
+{
+    public function index()
+    {
+        $res = Services::getInstance()->setDrives('ELASTICSEARCH')->getResources()->openActionLog();
+        $sql = \DB::table('ls_article')->get()->toArray();
+
+        $m = $res->createIndexDocument('ls_article', $sql, 'article_id');
+
+        dd($m);
+    }
+}
+```
+
+## 更新日志
+
+请查看 [CHANGELOG.md](CHANGELOG.md)
+
+## 开源协议
+
+The MIT License (MIT)
