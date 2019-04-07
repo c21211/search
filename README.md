@@ -1,6 +1,6 @@
 # SEARCH-SDK 
 
-[![GitHub release](https://img.shields.io/github/release/shugachara/music-sdk.svg)](https://github.com/shugachara/music-sdk/releases)
+[![GitHub release](https://img.shields.io/github/release/shugachara/search-sdk.svg)](https://github.com/shugachara/search-sdk/releases)
 [![PHP version](https://img.shields.io/badge/php-%3E%207-orange.svg)](https://github.com/php/php-src)
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](#LICENSE)
 
