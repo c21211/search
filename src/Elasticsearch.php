@@ -20,6 +20,11 @@ namespace ShugaChara\SearchSDK;
 use Elasticsearch\ClientBuilder;
 use ShugaChara\CoreSDK\Traits\Singleton;
 
+/**
+ * Class Elasticsearch
+ * @method static $this getInstance
+ * @package ShugaChara\SearchSDK
+ */
 class Elasticsearch
 {
     use Singleton;
