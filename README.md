@@ -1,6 +1,6 @@
-# SEARCH-SDK 
+# SEARCH
 
-[![GitHub release](https://img.shields.io/github/release/shugachara/search-sdk.svg)](https://github.com/shugachara/search-sdk/releases)
+[![GitHub release](https://img.shields.io/github/release/shugachara/search.svg)](https://github.com/shugachara/search/releases)
 [![PHP version](https://img.shields.io/badge/php-%3E%207-orange.svg)](https://github.com/php/php-src)
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](#LICENSE)
 
@@ -12,7 +12,7 @@
 
 ## 包地址
 
-[Search-SDK](https://packagist.org/packages/shugachara/search-sdk)
+[Search](https://packagist.org/packages/shugachara/search)
 
 ## 使用方法
 
@@ -21,7 +21,7 @@
 **安装**
 
 ```
-composer require shugachara/search-sdk
+composer require shugachara/search
 ```
 
 **调用**
@@ -30,13 +30,14 @@ composer require shugachara/search-sdk
 <?php
 namespace App\Http\Controllers;
 
-use ShugaChara\SearchSDK\Elasticsearch;
+use DB;
+use ShugaChara\Search\Elasticsearch;
 
 class IndexController extends Controller
 {
     public function index()
     {
-        $sql = \DB::table('ls_article')->get()->toArray();
+        $sql = DB::table('ls_article')->get()->toArray();
 
         $res = Elasticsearch::getInstance()->initGlobalConfig();
         $m = $res->createIndexDocument('ls_article', $sql, 'article_id');
@@ -51,6 +52,14 @@ class IndexController extends Controller
 
 请查看 [CHANGELOG.md](CHANGELOG.md)
 
-## 开源协议
+### 贡献
 
-The MIT License (MIT)
+非常欢迎感兴趣，并且愿意参与其中，共同打造更好PHP生态。
+
+* 在你的系统中使用，将遇到的问题 [反馈](https://github.com/shugachara/search/issues)
+
+### 联系
+
+如果你在使用中遇到问题，请联系: [1099013371@qq.com](mailto:1099013371@qq.com). 博客: [kaka 梦很美](http://www.ls331.com)
+
+## License MIT
