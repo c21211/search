@@ -15,15 +15,15 @@
 |--------------------------------------------------------------------------
  */
 
-namespace ShugaChara\SearchSDK;
+namespace ShugaChara\Search;
 
 use Elasticsearch\ClientBuilder;
-use ShugaChara\CoreSDK\Traits\Singleton;
+use ShugaChara\Core\Traits\Singleton;
 
 /**
  * Class Elasticsearch
  * @method static $this getInstance
- * @package ShugaChara\SearchSDK
+ * @package ShugaChara\Search
  */
 class Elasticsearch
 {
