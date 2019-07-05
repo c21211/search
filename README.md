@@ -37,13 +37,78 @@ class IndexController extends Controller
 {
     public function index()
     {
-        $sql = DB::table('ls_article')->get()->toArray();
+        $url = 'http://127.0.0.1:9200';
+        
+        $db = db()->table('contents')->first();
+        $db = (array) $db;
 
-        $res = Elasticsearch::getInstance()->initGlobalConfig();
-        $m = $res->createIndexDocument('ls_article', $sql, 'article_id');
-        // $m = $res->deleteIndexDocument('ls_article');
-
-        dd($m);
+        $es = Elasticsearch::getInstance()->connect([
+            'hosts' => [
+                '127.0.0.1:9200',
+            ],
+            'retries' => 8
+        ]);
+        
+        // (HTTP CURL方式) 列出所有可用的 API (调用的是es 底层的 _cat, 具体操作可参考es官方文档， 几个参数可用-也可以查看该方法源码)
+        dump($es->_cat($url));
+        
+        // (API 方式) 列出所有可用的 API , 获取底层 elasticsearch _cat空间，可直接操作 es _cat方法, 具体api列表和 $this->_cat() 类似。
+        dump($es->cat());
+        
+        // 获取底层 elasticsearch 集群空间，可直接操作 es 集群状态方法
+        dump($es->cluster());
+        
+        // 获得底层 elasticsearch 索引空间, 可直接操作 es 索引方法
+        dump($es->indices());
+        
+        // 获得底层 elasticsearch 节点空间, 可直接操作 es 节点方法
+        dump($es->nodes());
+        
+        // 获得底层 elasticsearch Client资源, 可直接操作 es API 的所有方法
+        dump($es->elastic());
+        
+        //  文档是否存在
+        dump($es->exists('article', 1));  
+        
+        // 创建文档 (当文档不存在时才能创建成功 返回数组，文档存在不能创建或创建失败 返回false)
+        dump($es->create('article', $db, 1));
+        
+        // 批量创建文档 (创建成功 返回数据, 创建失败 返回false)
+        dump($es->bulkCreate('article', $db, array_column($db, 'id')));
+        
+        // 批量更新文档 (更新完成不代表成功(例如:写入的文档不存在),但是将会 返回数据(里面有status/errors检查是否更新成功), 更新失败 返回false)
+        $result = [];
+        foreach ($db as $item) {
+            $result[]['doc'] = $item;
+        }
+        dump($es->bulkUpdate('article', $result, array_column($db, 'cid')));
+        
+        // 更新文档 (当文档更新成功 返回数组，文档不存在或更新失败 返回false)
+        dump($es->update('article', ['doc' => $db], 1));
+        
+        // 更新或创建文档 (当文档创建/更新成功 返回数组，文档创建或创建失败 返回false)
+        dump($es->updateOrCreate('article', $db, 1));
+        
+        // 获取文档 (当文档不存在时 返回null，文档存在 返回数组)
+        dump($es->get('article', 1));
+        
+        // 删除文档 (当文档删除时 返回被删除的文档信息，文档不存在时执行删除操作将会 返回true)
+        dump($es->delete('article', 1));
+        
+        // 创建索引 (当索引创建成功时 返回数组，当索引已存在时 返回false)
+        dump($es->createIndex('article'));
+        
+        // 索引是否存在
+        dump($es->existsIndex('article'));
+        
+        // 删除索引 (当索引删除时 返回被删除的索引信息，索引不存在时执行删除操作将会 返回true
+        dump($es->deleteIndex('article'));
+        
+        // 文档搜索 (搜索成功 返回数组结果, 搜索失败 返回null)
+        dump($es->search('article'));
+        
+        // 显示最近的一次错误信息
+        dump($es->showErrorMsg());
     }
 }
 ```

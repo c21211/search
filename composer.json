@@ -19,9 +19,9 @@
         }
     ],
     "require": {
-        "php": ">=7.0",
+        "php": ">=7.1",
         "shugachara/core": "dev-master",
-        "elasticsearch/elasticsearch": "~6.0"
+        "elasticsearch/elasticsearch": "^7.0"
     },
     "require-dev": {
         "phpunit/phpunit": "~6.0"
