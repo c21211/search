@@ -6,9 +6,8 @@
 
 ## 说明
 
-对于大数据来说,搜索引擎技术是非常重要的。比如日志分析系统、全文搜索等。
-
-暂时已完成ElasticSearch第一版开发，只包含基础功能, 后续会不断扩展，我将会一直维护该项目, 如果有需要改进的地方欢迎 issues。
+对于大数据来说,搜索引擎技术是非常重要的。比如日志分析系统、全文搜索等。<br />
+此扩展包包含 Elasticsearch 所有可用API，也支持直接调用底层, 搜索方面加入了 DSL。
 
 ## 包地址
 
@@ -30,8 +29,8 @@ composer require shugachara/search
 <?php
 namespace App\Http\Controllers;
 
-use DB;
 use ShugaChara\Search\Elasticsearch;
+use ShugaChara\Search\ElasticsearchDSL;
 
 class IndexController extends Controller
 {
@@ -104,8 +103,33 @@ class IndexController extends Controller
         // 删除索引 (当索引删除时 返回被删除的索引信息，索引不存在时执行删除操作将会 返回true
         dump($es->deleteIndex('article'));
         
-        // 文档搜索 (搜索成功 返回数组结果, 搜索失败 返回null)
+        // 文档搜索[前提是需要对ES搜索引擎的查询相对熟悉] (搜索成功 返回数组结果, 搜索失败 返回null)
         dump($es->search('article'));
+        // 善用 DSL, 使代码更优雅，内容太多，请查看源码, 不一一介绍, DSL 最终达到的目的就是构造出 ES API 可执行的 Query, 然后丢到 ES 执行 Search
+        // 注意个方法, $dsl->getSearchBody() Search主体
+        $dsl = new ElasticsearchDSL();
+        // 创建/使用布尔查询
+        $boolQuery = $dsl->BoolQuery();
+        // 添加布尔查询语句
+        $dsl->addBoolQuery(
+            $boolQuery,
+            $dsl->MatchPhraseQuery('cid', 9),
+            $dsl->boolQueryMust
+        );
+        $dsl->addBoolQuery(
+            $boolQuery,
+            $dsl->MatchPhraseQuery('cid', 1),
+            $dsl->boolQueryMustNot
+        );
+        $dsl->addBoolQueryParameter(
+           $boolQuery,
+           'minimum_should_match',
+           3
+        );
+        // 将布尔查询语句丢进DSL Query池
+        $dsl->addQuery($boolQuery);
+        $query = $dsl->getSearchBody()->toArray();
+        dump($es->search('article', $query));
         
         // 显示最近的一次错误信息
         dump($es->showErrorMsg());
