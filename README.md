@@ -108,17 +108,25 @@ class IndexController extends Controller
         // 善用 DSL, 使代码更优雅，内容太多，请查看源码, 不一一介绍, DSL 最终达到的目的就是构造出 ES API 可执行的 Query, 然后丢到 ES 执行 Search
         // 注意个方法, $dsl->getSearchBody() Search主体
         $dsl = new ElasticsearchDSL();
+        
+        //$MatchPhraseQuery = $dsl->MatchPhraseQuery('cid', 9);
+        //$ConstantScoreQuery = $dsl->ConstantScoreQuery($MatchPhraseQuery, ['boost' => 1000]);
+        //$dsl->addQuery($MatchPhraseQuery);
+        // $QueryStringQuery = $dsl->QueryStringQuery('Swoole');
+        // $dsl->addQuery($QueryStringQuery);
+        
         // 创建/使用布尔查询
         $boolQuery = $dsl->BoolQuery();
+        // $boolQuery->add($dsl->MultiMatchQuery('id', 5), $dsl->boolQueryMust);
         // 添加布尔查询语句
         $dsl->addBoolQuery(
             $boolQuery,
-            $dsl->MatchPhraseQuery('cid', 9),
+            $dsl->MatchPhraseQuery('id', 9),
             $dsl->boolQueryMust
         );
         $dsl->addBoolQuery(
             $boolQuery,
-            $dsl->MatchPhraseQuery('cid', 1),
+            $dsl->MatchPhraseQuery('id', 1),
             $dsl->boolQueryMustNot
         );
         $dsl->addBoolQueryParameter(
