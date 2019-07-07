@@ -118,26 +118,23 @@ class IndexController extends Controller
         // 创建/使用布尔查询
         $boolQuery = $dsl->BoolQuery();
         // $boolQuery->add($dsl->MultiMatchQuery('id', 5), $dsl->boolQueryMust);
+        $location = $dsl->MatchPhrasePrefixQuery('location', '广东');
+        $status = $dsl->MatchPhraseQuery('status', 1);
+        $string = $dsl->QueryStringQuery('林');
         // 添加布尔查询语句
-        $dsl->addBoolQuery(
+        $dsl->addBoolQuery($boolQuery, $location, $dsl->boolQueryMust);
+        $dsl->addBoolQuery($boolQuery, $status, $dsl->boolQueryMust);
+        $dsl->addBoolQuery($boolQuery, $string, $dsl->boolQueryMust);
+        /*$dsl->addBoolQueryParameter(
             $boolQuery,
-            $dsl->MatchPhraseQuery('id', 9),
-            $dsl->boolQueryMust
-        );
-        $dsl->addBoolQuery(
-            $boolQuery,
-            $dsl->MatchPhraseQuery('id', 1),
-            $dsl->boolQueryMustNot
-        );
-        $dsl->addBoolQueryParameter(
-           $boolQuery,
-           'minimum_should_match',
-           3
-        );
+            'minimum_should_match',
+            2
+        );*/
+        $dsl->addSort('id', 'desc');
         // 将布尔查询语句丢进DSL Query池
         $dsl->addQuery($boolQuery);
         $query = $dsl->getSearchBody()->toArray();
-        dump($es->search('article', $query));
+        dump($es->search('user', $query));
         
         // 显示最近的一次错误信息
         dump($es->showErrorMsg());
