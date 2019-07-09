@@ -20,7 +20,7 @@
     ],
     "require": {
         "php": ">=7.1",
-        "shugachara/core": "dev-master",
+        "shugachara/core": "^1.0",
         "elasticsearch/elasticsearch": "^7.0",
         "ongr/elasticsearch-dsl": "^6.0"
     },

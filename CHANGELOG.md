@@ -2,4 +2,4 @@
 
 2019.04.06 `v1.0.0`
 
-- ElasticSearch 第一版开发完成,包含基础功能
+- 包含 Elasticsearch 所有可用API，也支持直接调用底层, 搜索方面加入了 DSL。
