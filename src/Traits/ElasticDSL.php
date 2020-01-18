@@ -2,7 +2,7 @@
 // +----------------------------------------------------------------------
 // | Created by linshan. 版权所有 @
 // +----------------------------------------------------------------------
-// | Copyright (c) 2019 All rights reserved.
+// | Copyright (c) 2020 All rights reserved.
 // +----------------------------------------------------------------------
 // | Technology changes the world . Accumulation makes people grow .
 // +----------------------------------------------------------------------
@@ -17,7 +17,7 @@
 |--------------------------------------------------------------------------
  */
 
-namespace ShugaChara\Search;
+namespace ShugaChara\Search\Traits;
 
 use ONGR\ElasticsearchDSL\BuilderInterface;
 use ONGR\ElasticsearchDSL\Query\Compound\BoolQuery;
@@ -58,7 +58,11 @@ use ONGR\ElasticsearchDSL\Query\TermLevel\WildcardQuery;
 use ONGR\ElasticsearchDSL\Search;
 use ONGR\ElasticsearchDSL\Sort\FieldSort;
 
-trait DSLTrait
+/**
+ * Trait ElasticDSL
+ * @package ShugaChara\Search\Traits
+ */
+trait ElasticDSL
 {
     /**
      * @var string bool -> must子句 文档必须匹配must查询条件

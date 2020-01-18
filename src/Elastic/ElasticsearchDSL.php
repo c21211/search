@@ -2,7 +2,7 @@
 // +----------------------------------------------------------------------
 // | Created by linshan. 版权所有 @
 // +----------------------------------------------------------------------
-// | Copyright (c) 2019 All rights reserved.
+// | Copyright (c) 2020 All rights reserved.
 // +----------------------------------------------------------------------
 // | Technology changes the world . Accumulation makes people grow .
 // +----------------------------------------------------------------------
@@ -15,19 +15,19 @@
 |--------------------------------------------------------------------------
  */
 
-namespace ShugaChara\Search;
+namespace ShugaChara\Search\Elastic;
 
 use ONGR\ElasticsearchDSL\BuilderInterface;
 use ONGR\ElasticsearchDSL\Query\Compound\BoolQuery;
+use ShugaChara\Search\Traits\ElasticDSL;
 
 /**
  * Class ElasticsearchDSL
- *
- * @package ShugaChara\Search
+ * @package ShugaChara\Search\Elastic
  */
 class ElasticsearchDSL
 {
-    use DSLTrait;
+    use ElasticDSL;
 
     /**
      * 搜索体(body)
@@ -36,12 +36,17 @@ class ElasticsearchDSL
      */
     protected $searchBody;
 
+    /**
+     * ElasticsearchDSL constructor.
+     */
     public function __construct()
     {
         $this->searchBody = $this->Search();
     }
 
     /**
+     * 获取搜索体
+     * 
      * @return \ONGR\ElasticsearchDSL\Search|Search
      */
     public function getSearchBody()
