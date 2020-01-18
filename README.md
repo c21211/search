@@ -1,4 +1,4 @@
-# SEARCH
+# SEARCH 搜索引擎 SDK
 
 [![GitHub release](https://img.shields.io/github/release/shugachara/search.svg)](https://github.com/shugachara/search/releases)
 [![PHP version](https://img.shields.io/badge/php-%3E%207-orange.svg)](https://github.com/php/php-src)
