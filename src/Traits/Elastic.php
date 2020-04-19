@@ -11,7 +11,7 @@
 
 namespace ShugaChara\Search\Traits;
 
-use ShugaChara\Core\Helpers;
+use ShugaChara\Core\Utils\Helper\HttpHelper;
 
 /**
  * Trait Elastic
@@ -118,6 +118,6 @@ trait Elastic
             $showAction .= $showAction ? '&help' : '?help';
         }
 
-        return Helpers::curl($host . '/_cat/' . $apiName . $showAction);
+        return HttpHelper::curl($host . '/_cat/' . $apiName . $showAction);
     }
 }

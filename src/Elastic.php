@@ -28,10 +28,10 @@
 namespace ShugaChara\Search;
 
 use Elasticsearch\Client;
-use ShugaChara\Core\Helpers;
 use Elasticsearch\ClientBuilder;
 use Exception;
 use ShugaChara\Core\Traits\Singleton;
+use ShugaChara\Core\Utils\Helper\ArrayHelper;
 use ShugaChara\Search\Traits\Elastic as ElasticTraits;
 
 /**
@@ -93,7 +93,7 @@ class Elastic
         }
 
         // 设置客户端连接重试次数
-        $retries = (int) Helpers::array_get($this->config, 'retries', 0);
+        $retries = (int) ArrayHelper::get($this->config, 'retries', 0);
 
         if (! $this->elastic) {
             try {
